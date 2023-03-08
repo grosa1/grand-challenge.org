@@ -2005,6 +2005,18 @@ files = [
 ]
 
 [[package]]
+name = "importtime-waterfall"
+version = "1.0.0"
+description = "Generate waterfalls from `-Ximporttime` tracing."
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "importtime_waterfall-1.0.0-py2.py3-none-any.whl", hash = "sha256:e65dbc4d23f0fd698ca3e8cfe767937b86f697e11790ac672aa86109792b3595"},
+    {file = "importtime_waterfall-1.0.0.tar.gz", hash = "sha256:8140eb8e1774a39d426df82220f36b17d78ccbbba2adc75466979a315395f391"},
+]
+
+[[package]]
 name = "inflection"
 version = "0.5.1"
 description = "A port of Ruby on Rails inflector to Python"
@@ -4462,4 +4474,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.11"
-content-hash = "434f5ccd155cff99efcd567360576750d8c8a458075763284a36ddbf20ee5a7d"
+content-hash = "667b9224d735993edb0bf35042ad4f83e379387406dfd4dadfb9838ae075e110"

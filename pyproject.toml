@@ -119,6 +119,7 @@ aiohttp = "^3.8" # Fix for amass dependency
 watchfiles = "*"
 playwright = "*"
 pytest-playwright = "*"
+importtime-waterfall = "^1.0.0"
 
 [tool.amass]
 output = "app/grandchallenge/core/static/vendored"
