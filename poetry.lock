@@ -1035,21 +1035,6 @@ nested = ["django-nested-admin (>=3.0.21)"]
 tags = ["django-taggit"]
 
 [[package]]
-name = "django-capture-on-commit-callbacks"
-version = "1.11.0"
-description = "Capture and make assertions on transaction.on_commit() callbacks."
-category = "dev"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "django-capture-on-commit-callbacks-1.11.0.tar.gz", hash = "sha256:ee5a79dc74937a0318c192b54d904ce0826ced47748d160bf15324fc77e98c41"},
-    {file = "django_capture_on_commit_callbacks-1.11.0-py3-none-any.whl", hash = "sha256:a75300586390411a7e4641128c4251fdc5db25b6e76543329d82fb2c2bc71163"},
-]
-
-[package.dependencies]
-Django = ">=3.2"
-
-[[package]]
 name = "django-celery-beat"
 version = "2.5.0"
 description = "Database-backed Periodic Tasks."
@@ -4409,4 +4394,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.11"
-content-hash = "8dfa3de423a8df842a7ae31684fdcc4c0b347c64199ab9afd20e6ca1a99bb202"
+content-hash = "5db8e2d206f4f1006dabb6f4c41912a8490a26028ac0ca8c0bb290b2a226dddb"

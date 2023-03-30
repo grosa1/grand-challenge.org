@@ -3,7 +3,6 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from django_capture_on_commit_callbacks import capture_on_commit_callbacks
 from guardian.shortcuts import assign_perm, remove_perm
 
 from grandchallenge.archives.models import ArchiveItem
@@ -295,7 +294,9 @@ def test_api_archive_item_retrieve_permissions(client):
 
 
 @pytest.mark.django_db
-def test_api_archive_item_interface_type_update(client, settings):
+def test_api_archive_item_interface_type_update(
+    client, settings, django_capture_on_commit_callbacks
+):
     # Override the celery settings
     settings.task_eager_propagates = (True,)
     settings.task_always_eager = (True,)
@@ -306,7 +307,9 @@ def test_api_archive_item_interface_type_update(client, settings):
     item = ArchiveItemFactory(archive=archive)
 
     session, _ = create_raw_upload_image_session(
-        images=["image10x10x10.mha"], user=editor
+        django_capture_on_commit_callbacks=django_capture_on_commit_callbacks,
+        images=["image10x10x10.mha"],
+        user=editor,
     )
     session.refresh_from_db()
     im = session.image_set.get()
@@ -320,7 +323,7 @@ def test_api_archive_item_interface_type_update(client, settings):
 
     # change interface type from generic medical image to generic overlay
     # for the already uploaded image
-    with capture_on_commit_callbacks(execute=True):
+    with django_capture_on_commit_callbacks(execute=True):
         response = get_view_for_user(
             viewname="api:archives-item-detail",
             reverse_kwargs={"pk": item.pk},
@@ -348,7 +351,9 @@ def test_api_archive_item_interface_type_update(client, settings):
 
 
 @pytest.mark.django_db
-def test_api_archive_item_add_and_update_value(client, settings):
+def test_api_archive_item_add_and_update_value(
+    client, settings, django_capture_on_commit_callbacks
+):
     # Override the celery settings
     settings.task_eager_propagates = (True,)
     settings.task_always_eager = (True,)
@@ -361,7 +366,7 @@ def test_api_archive_item_add_and_update_value(client, settings):
         kind=InterfaceKind.InterfaceKindChoices.BOOL
     )
     # add civ
-    with capture_on_commit_callbacks(execute=True):
+    with django_capture_on_commit_callbacks(execute=True):
         response = get_view_for_user(
             viewname="api:archives-item-detail",
             reverse_kwargs={"pk": item.pk},
@@ -380,7 +385,7 @@ def test_api_archive_item_add_and_update_value(client, settings):
     assert civ.interface.slug == ci.slug
     assert civ.value
     #  update civ
-    with capture_on_commit_callbacks(execute=True):
+    with django_capture_on_commit_callbacks(execute=True):
         response = get_view_for_user(
             viewname="api:archives-item-detail",
             reverse_kwargs={"pk": item.pk},
@@ -401,7 +406,9 @@ def test_api_archive_item_add_and_update_value(client, settings):
 
 
 @pytest.mark.django_db
-def test_api_archive_item_add_and_update_non_image_file(client, settings):
+def test_api_archive_item_add_and_update_non_image_file(
+    client, settings, django_capture_on_commit_callbacks
+):
     # Override the celery settings
     settings.task_eager_propagates = (True,)
     settings.task_always_eager = (True,)
@@ -416,7 +423,7 @@ def test_api_archive_item_add_and_update_non_image_file(client, settings):
         creator=editor, file_path=RESOURCE_PATH / "test.pdf"
     )
     # add civ
-    with capture_on_commit_callbacks(execute=True):
+    with django_capture_on_commit_callbacks(execute=True):
         response = get_view_for_user(
             viewname="api:archives-item-detail",
             reverse_kwargs={"pk": item.pk},
@@ -442,7 +449,7 @@ def test_api_archive_item_add_and_update_non_image_file(client, settings):
     upload2 = create_upload_from_file(
         creator=editor, file_path=RESOURCE_PATH / "test.zip"
     )
-    with capture_on_commit_callbacks(execute=True):
+    with django_capture_on_commit_callbacks(execute=True):
         response = get_view_for_user(
             viewname="api:archives-item-detail",
             reverse_kwargs={"pk": item.pk},
@@ -467,7 +474,9 @@ def test_api_archive_item_add_and_update_non_image_file(client, settings):
 
 
 @pytest.mark.django_db
-def test_api_archive_item_add_and_update_json_file(client, settings):
+def test_api_archive_item_add_and_update_json_file(
+    client, settings, django_capture_on_commit_callbacks
+):
     # Override the celery settings
     settings.task_eager_propagates = (True,)
     settings.task_always_eager = (True,)
@@ -488,7 +497,7 @@ def test_api_archive_item_add_and_update_json_file(client, settings):
             creator=editor, file_path=Path(file.name)
         )
         # add civ
-        with capture_on_commit_callbacks(execute=True):
+        with django_capture_on_commit_callbacks(execute=True):
             response = get_view_for_user(
                 viewname="api:archives-item-detail",
                 reverse_kwargs={"pk": item.pk},
@@ -518,7 +527,7 @@ def test_api_archive_item_add_and_update_json_file(client, settings):
             creator=editor, file_path=Path(file.name)
         )
 
-        with capture_on_commit_callbacks(execute=True):
+        with django_capture_on_commit_callbacks(execute=True):
             response = get_view_for_user(
                 viewname="api:archives-item-detail",
                 reverse_kwargs={"pk": item.pk},
@@ -665,7 +674,9 @@ def test_archive_items_to_reader_study_update(client, settings):
 
 
 @pytest.mark.django_db
-def test_archive_item_add_image(client, settings):
+def test_archive_item_add_image(
+    client, settings, django_capture_on_commit_callbacks
+):
     settings.task_eager_propagates = (True,)
     settings.task_always_eager = (True,)
     archive = ArchiveFactory()
@@ -679,8 +690,8 @@ def test_archive_item_add_image(client, settings):
         file_path=RESOURCE_PATH / "image10x10x10.mha",
         creator=editor,
     )
-    with capture_on_commit_callbacks(execute=True):
-        with capture_on_commit_callbacks(execute=True):
+    with django_capture_on_commit_callbacks(execute=True):
+        with django_capture_on_commit_callbacks(execute=True):
             response = get_view_for_user(
                 viewname="archives:item-edit",
                 client=client,
@@ -701,8 +712,8 @@ def test_archive_item_add_image(client, settings):
     assert "image10x10x10.mha" == item.values.first().image.name
     old_civ = item.values.first()
 
-    with capture_on_commit_callbacks(execute=True):
-        with capture_on_commit_callbacks(execute=True):
+    with django_capture_on_commit_callbacks(execute=True):
+        with django_capture_on_commit_callbacks(execute=True):
             response = get_view_for_user(
                 viewname="archives:item-edit",
                 client=client,
@@ -725,8 +736,8 @@ def test_archive_item_add_image(client, settings):
 
     image = ImageFactory()
     assign_perm("cases.view_image", editor, image)
-    with capture_on_commit_callbacks(execute=True):
-        with capture_on_commit_callbacks(execute=True):
+    with django_capture_on_commit_callbacks(execute=True):
+        with django_capture_on_commit_callbacks(execute=True):
             response = get_view_for_user(
                 viewname="archives:item-edit",
                 client=client,
@@ -749,7 +760,9 @@ def test_archive_item_add_image(client, settings):
 
 
 @pytest.mark.django_db
-def test_archive_item_add_file(client, settings):
+def test_archive_item_add_file(
+    client, settings, django_capture_on_commit_callbacks
+):
     settings.task_eager_propagates = (True,)
     settings.task_always_eager = (True,)
     archive = ArchiveFactory()
@@ -761,8 +774,8 @@ def test_archive_item_add_file(client, settings):
         creator=editor, file_path=RESOURCE_PATH / "test.pdf"
     )
 
-    with capture_on_commit_callbacks(execute=True):
-        with capture_on_commit_callbacks(execute=True):
+    with django_capture_on_commit_callbacks(execute=True):
+        with django_capture_on_commit_callbacks(execute=True):
             response = get_view_for_user(
                 viewname="archives:item-edit",
                 client=client,
@@ -781,7 +794,9 @@ def test_archive_item_add_file(client, settings):
 
 
 @pytest.mark.django_db
-def test_archive_item_add_json_file(client, settings):
+def test_archive_item_add_json_file(
+    client, settings, django_capture_on_commit_callbacks
+):
     settings.task_eager_propagates = (True,)
     settings.task_always_eager = (True,)
     archive = ArchiveFactory()
@@ -798,8 +813,8 @@ def test_archive_item_add_json_file(client, settings):
         upload = create_upload_from_file(
             creator=editor, file_path=Path(file.name)
         )
-        with capture_on_commit_callbacks(execute=True):
-            with capture_on_commit_callbacks(execute=True):
+        with django_capture_on_commit_callbacks(execute=True):
+            with django_capture_on_commit_callbacks(execute=True):
                 response = get_view_for_user(
                     viewname="archives:item-edit",
                     client=client,
@@ -821,7 +836,9 @@ def test_archive_item_add_json_file(client, settings):
 
 
 @pytest.mark.django_db
-def test_archive_item_add_value(client, settings):
+def test_archive_item_add_value(
+    client, settings, django_capture_on_commit_callbacks
+):
     settings.task_eager_propagates = (True,)
     settings.task_always_eager = (True,)
     archive = ArchiveFactory()
@@ -832,8 +849,8 @@ def test_archive_item_add_value(client, settings):
         kind=InterfaceKind.InterfaceKindChoices.BOOL
     )
 
-    with capture_on_commit_callbacks(execute=True):
-        with capture_on_commit_callbacks(execute=True):
+    with django_capture_on_commit_callbacks(execute=True):
+        with django_capture_on_commit_callbacks(execute=True):
             response = get_view_for_user(
                 viewname="archives:item-edit",
                 client=client,

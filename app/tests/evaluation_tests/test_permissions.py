@@ -2,7 +2,6 @@ import pytest
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.test import TestCase
-from django_capture_on_commit_callbacks import capture_on_commit_callbacks
 from guardian.shortcuts import get_groups_with_perms, get_users_with_perms
 
 from grandchallenge.evaluation.models import (
@@ -56,7 +55,9 @@ class TestPhasePermissions(TestCase):
         }
         assert get_users_with_perms(p, with_group_users=False).count() == 0
 
-    def test_hiding_phase_updates_perms(self):
+    def test_hiding_phase_updates_perms(
+        self, django_capture_on_commit_callbacks
+    ):
         e: Evaluation = EvaluationFactory(
             submission__phase__auto_publish_new_results=True,
             submission__phase__public=True,
@@ -85,7 +86,7 @@ class TestPhasePermissions(TestCase):
         settings.task_eager_propagates = (True,)
         settings.task_always_eager = (True,)
 
-        with capture_on_commit_callbacks(execute=True):
+        with django_capture_on_commit_callbacks(execute=True):
             e.submission.phase.public = False
             e.submission.phase.save()
 
@@ -99,7 +100,9 @@ class TestPhasePermissions(TestCase):
             e.submission.phase.challenge.admins_group: {"view_submission"},
         }
 
-    def test_unhiding_phase_updates_perms(self):
+    def test_unhiding_phase_updates_perms(
+        self, django_capture_on_commit_callbacks
+    ):
         e: Evaluation = EvaluationFactory(
             submission__phase__auto_publish_new_results=True,
             submission__phase__public=False,
@@ -125,7 +128,7 @@ class TestPhasePermissions(TestCase):
         settings.task_eager_propagates = (True,)
         settings.task_always_eager = (True,)
 
-        with capture_on_commit_callbacks(execute=True):
+        with django_capture_on_commit_callbacks(execute=True):
             e.submission.phase.public = True
             e.submission.phase.save()
 
@@ -256,7 +259,9 @@ class TestEvaluationPermissions:
             }
         }
 
-    def test_hiding_challenge_updates_perms(self, settings):
+    def test_hiding_challenge_updates_perms(
+        self, settings, django_capture_on_commit_callbacks
+    ):
         """If a challenge is hidden then the viewer group should be updated"""
         e: Evaluation = EvaluationFactory(
             submission__phase__auto_publish_new_results=True,
@@ -280,7 +285,7 @@ class TestEvaluationPermissions:
         settings.task_eager_propagates = (True,)
         settings.task_always_eager = (True,)
 
-        with capture_on_commit_callbacks(execute=True):
+        with django_capture_on_commit_callbacks(execute=True):
             e.submission.phase.challenge.hidden = True
             e.submission.phase.challenge.save()
 
@@ -292,7 +297,9 @@ class TestEvaluationPermissions:
             participants: {"view_evaluation"},
         }
 
-    def test_unhiding_challenge_updates_perms(self, settings):
+    def test_unhiding_challenge_updates_perms(
+        self, settings, django_capture_on_commit_callbacks
+    ):
         """If a challenge is unhidden then the viewer group should be updated"""
         e: Evaluation = EvaluationFactory(
             submission__phase__auto_publish_new_results=True,
@@ -316,7 +323,7 @@ class TestEvaluationPermissions:
         settings.task_eager_propagates = (True,)
         settings.task_always_eager = (True,)
 
-        with capture_on_commit_callbacks(execute=True):
+        with django_capture_on_commit_callbacks(execute=True):
             e.submission.phase.challenge.hidden = False
             e.submission.phase.challenge.save()
 

@@ -5,7 +5,6 @@ import pytest
 from django.test import TestCase, override_settings
 from django.utils import timezone
 from django.utils.timezone import now
-from django_capture_on_commit_callbacks import capture_on_commit_callbacks
 
 from grandchallenge.algorithms.models import Job
 from grandchallenge.evaluation.models import Evaluation
@@ -48,12 +47,14 @@ class TestSubmission(TestCase):
 
     @override_settings(CELERY_TASK_ALWAYS_EAGER=True)
     @override_settings(CELERY_TASK_EAGER_PROPAGATES=True)
-    def test_algorithm_submission_creates_one_job_per_test_set_image(self):
+    def test_algorithm_submission_creates_one_job_per_test_set_image(
+        self, django_capture_on_commit_callbacks
+    ):
         s = SubmissionFactory(
             phase=self.method.phase, algorithm_image=self.algorithm_image
         )
 
-        with capture_on_commit_callbacks() as callbacks:
+        with django_capture_on_commit_callbacks() as callbacks:
             create_evaluation(submission_pk=s.pk, max_initial_jobs=None)
 
         # Execute the callbacks non-recursively
@@ -67,15 +68,17 @@ class TestSubmission(TestCase):
 
     @override_settings(CELERY_TASK_ALWAYS_EAGER=True)
     @override_settings(CELERY_TASK_EAGER_PROPAGATES=True)
-    def test_create_evaluation_is_idempotent(self):
+    def test_create_evaluation_is_idempotent(
+        self, django_capture_on_commit_callbacks
+    ):
         s = SubmissionFactory(
             phase=self.method.phase, algorithm_image=self.algorithm_image
         )
 
-        with capture_on_commit_callbacks(execute=False) as callbacks1:
+        with django_capture_on_commit_callbacks(execute=False) as callbacks1:
             create_evaluation(submission_pk=s.pk, max_initial_jobs=None)
 
-        with capture_on_commit_callbacks(execute=False) as callbacks2:
+        with django_capture_on_commit_callbacks(execute=False) as callbacks2:
             create_evaluation(submission_pk=s.pk, max_initial_jobs=None)
 
         # Execute the callbacks non-recursively
