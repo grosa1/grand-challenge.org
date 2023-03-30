@@ -56,7 +56,7 @@ SITE_ROOT = Path(__file__).resolve(strict=True).parent.parent
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql_psycopg2",
+        "ENGINE": "django.db.backends.postgresql",
         "NAME": os.environ.get("POSTGRES_DB", "grandchallenge"),
         "USER": os.environ.get("POSTGRES_USER", "grandchallenge"),
         "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "secretpassword"),
@@ -109,7 +109,6 @@ USE_I18N = True
 
 # If you set this to False, Django will not format dates, numbers and
 # calendars according to the current locale.
-USE_L10N = True
 
 # If you set this to False, Django will not use timezone-aware datetimes.
 USE_TZ = True
@@ -282,7 +281,7 @@ CSRF_COOKIE_SECURE = True
 # of the CSRF token as existing ones are already in use.
 CSRF_COOKIE_DOMAIN = SESSION_COOKIE_DOMAIN
 CSRF_COOKIE_NAME = "_csrftoken"
-CSRF_TRUSTED_ORIGINS = [SESSION_COOKIE_DOMAIN]
+CSRF_TRUSTED_ORIGINS = [f"https://*{SESSION_COOKIE_DOMAIN}"]
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = True
 
