@@ -32,7 +32,7 @@ class DefaultImageAnnotationModelFactory(factory.django.DjangoModelFactory):
     image = factory.SubFactory(ImageFactory)
     grader = factory.SubFactory(UserFactory)
     created = factory.fuzzy.FuzzyDateTime(
-        datetime.datetime(1950, 1, 1, 0, 0, 0, 0, datetime.timezone.UTC)
+        datetime.datetime(1950, 1, 1, 0, 0, 0, 0, datetime.timezone.utc)
     )
 
 
@@ -107,7 +107,7 @@ class LandmarkAnnotationSetFactory(factory.django.DjangoModelFactory):
 
     grader = factory.SubFactory(UserFactory)
     created = factory.fuzzy.FuzzyDateTime(
-        datetime.datetime(1950, 1, 1, 0, 0, 0, 0, datetime.timezone.UTC)
+        datetime.datetime(1950, 1, 1, 0, 0, 0, 0, datetime.timezone.utc)
     )
 
 
