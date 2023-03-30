@@ -240,8 +240,9 @@ REDIS_ENDPOINT = os.environ.get("REDIS_ENDPOINT", "redis://redis:6379")
 
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": f"{REDIS_ENDPOINT}/0",
+        "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
     },
     "machina_attachments": {
         "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
