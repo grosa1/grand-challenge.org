@@ -6,6 +6,7 @@ import pytest
 from actstream.actions import is_following
 from django.contrib.auth.models import Permission
 from django.db.models import BLANK_CHOICE_DASH
+from django_capture_on_commit_callbacks import capture_on_commit_callbacks
 from guardian.shortcuts import assign_perm
 
 from grandchallenge.cases.widgets import FlexibleImageWidget
@@ -505,9 +506,7 @@ def test_image_port_only_with_bounding_box(
 
 
 @pytest.mark.django_db
-def test_reader_study_copy(
-    client, settings, django_capture_on_commit_callbacks
-):
+def test_reader_study_copy(client, settings):
     settings.task_eager_propagates = (True,)
     settings.task_always_eager = (True,)
 
@@ -656,7 +655,7 @@ def test_reader_study_copy(
     assert copied_question.look_up_table == question.look_up_table
     assert copied_question.overlay_segments == question.overlay_segments
 
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         response = get_view_for_user(
             viewname="reader-studies:copy",
             client=client,
@@ -680,7 +679,7 @@ def test_reader_study_copy(
     assert _rs.readers_group.user_set.count() == 0
     assert _rs.editors_group.user_set.count() == 1
 
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         response = get_view_for_user(
             viewname="reader-studies:copy",
             client=client,
@@ -709,7 +708,7 @@ def test_reader_study_copy(
     assert _rs.readers_group.user_set.count() == 0
     assert _rs.editors_group.user_set.count() == 1
 
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         response = get_view_for_user(
             viewname="reader-studies:copy",
             client=client,

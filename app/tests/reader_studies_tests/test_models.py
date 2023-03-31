@@ -3,6 +3,7 @@ from contextlib import nullcontext
 import pytest
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db.models import ProtectedError
+from django_capture_on_commit_callbacks import capture_on_commit_callbacks
 
 from grandchallenge.components.models import (
     ComponentInterface,
@@ -183,9 +184,7 @@ def test_progress_for_user(settings):  # noqa: C901
 
 
 @pytest.mark.django_db
-def test_leaderboard(  # noqa: C901
-    reader_study_with_gt, settings, django_capture_on_commit_callbacks
-):
+def test_leaderboard(reader_study_with_gt, settings):  # noqa: C901
     settings.task_eager_propagates = (True,)
     settings.task_always_eager = (True,)
 
@@ -193,7 +192,7 @@ def test_leaderboard(  # noqa: C901
     r1, r2 = rs.readers_group.user_set.all()
     e = rs.editors_group.user_set.first()
 
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         for question in rs.questions.all():
             for ds in rs.display_sets.all():
                 AnswerFactory(
@@ -210,7 +209,7 @@ def test_leaderboard(  # noqa: C901
     assert user_score["score__sum"] == 6.0
     assert user_score["score__avg"] == 1.0
 
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         for i, question in enumerate(rs.questions.all()):
             for j, ds in enumerate(rs.display_sets.all()):
                 AnswerFactory(
@@ -233,7 +232,7 @@ def test_leaderboard(  # noqa: C901
         assert user_score["score__sum"] == 3.0
         assert user_score["score__avg"] == 0.5
 
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         for question in rs.questions.all():
             for ds in rs.display_sets.all():
                 AnswerFactory(
@@ -255,9 +254,7 @@ def test_leaderboard(  # noqa: C901
 
 
 @pytest.mark.django_db
-def test_statistics(
-    reader_study_with_gt, settings, django_capture_on_commit_callbacks
-):
+def test_statistics(reader_study_with_gt, settings):
     settings.task_eager_propagates = (True,)
     settings.task_always_eager = (True,)
 
@@ -266,7 +263,7 @@ def test_statistics(
 
     rs_questions = rs.questions.values_list("question_text", flat=True)
 
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         for question in rs.questions.all():
             for ds in rs.display_sets.all():
                 AnswerFactory(
@@ -294,7 +291,7 @@ def test_statistics(
         assert score.avg == 1.0
     assert ds == set()
 
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         for question in rs.questions.all():
             for ds in rs.display_sets.all():
                 answer = (
@@ -333,16 +330,14 @@ def test_statistics(
 
 
 @pytest.mark.django_db
-def test_score_for_user(
-    reader_study_with_gt, settings, django_capture_on_commit_callbacks
-):
+def test_score_for_user(reader_study_with_gt, settings):
     settings.task_eager_propagates = (True,)
     settings.task_always_eager = (True,)
 
     rs = reader_study_with_gt
     r1 = rs.readers_group.user_set.first()
 
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         for i, question in enumerate(rs.questions.all()):
             for j, ds in enumerate(rs.display_sets.all()):
                 AnswerFactory(

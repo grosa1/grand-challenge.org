@@ -4,6 +4,7 @@ from urllib.parse import urlparse
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.test import Client
+from django_capture_on_commit_callbacks import capture_on_commit_callbacks
 
 from grandchallenge.challenges.models import Challenge
 from grandchallenge.subdomains.utils import reverse
@@ -218,13 +219,10 @@ def validate_logged_in_view(*, challenge_set, client: Client, **kwargs):
         )
 
 
-def recurse_callbacks(callbacks, django_capture_on_commit_callbacks):
-    with django_capture_on_commit_callbacks() as new_callbacks:
+def recurse_callbacks(callbacks):
+    with capture_on_commit_callbacks() as new_callbacks:
         for callback in callbacks:
             callback()
 
     if new_callbacks:
-        recurse_callbacks(
-            callbacks=new_callbacks,
-            django_capture_on_commit_callbacks=django_capture_on_commit_callbacks,
-        )
+        recurse_callbacks(callbacks=new_callbacks)

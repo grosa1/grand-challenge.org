@@ -7,6 +7,7 @@ import pytest
 from django.contrib.auth.models import Group
 from django.utils import timezone
 from django.utils.text import slugify
+from django_capture_on_commit_callbacks import capture_on_commit_callbacks
 from guardian.shortcuts import assign_perm, remove_perm
 
 from grandchallenge.algorithms.models import Algorithm, AlgorithmImage, Job
@@ -598,12 +599,7 @@ def test_import_is_staff_only(client, authenticated_staff_user):
 
 
 @pytest.mark.django_db
-def test_import_view(
-    client,
-    authenticated_staff_user,
-    mocker,
-    django_capture_on_commit_callbacks,
-):
+def test_import_view(client, authenticated_staff_user, mocker):
     class RemoteTestClient:
         def list_algorithms(self, **__):
             return {
@@ -759,7 +755,7 @@ def test_import_view(
         return_value=RemoteTestClient(),
     )
 
-    with django_capture_on_commit_callbacks() as callbacks:
+    with capture_on_commit_callbacks() as callbacks:
         response = get_view_for_user(
             viewname="algorithms:import",
             user=authenticated_staff_user,
@@ -836,18 +832,13 @@ def test_import_view(
 
 
 @pytest.mark.django_db
-def test_create_job_with_json_file(
-    client, settings, algorithm_io_image, django_capture_on_commit_callbacks
-):
+def test_create_job_with_json_file(client, settings, algorithm_io_image):
     settings.task_eager_propagates = (True,)
     settings.task_always_eager = (True,)
 
-    with django_capture_on_commit_callbacks() as callbacks:
+    with capture_on_commit_callbacks() as callbacks:
         ai = AlgorithmImageFactory(image__from_path=algorithm_io_image)
-    recurse_callbacks(
-        callbacks=callbacks,
-        django_capture_on_commit_callbacks=django_capture_on_commit_callbacks,
-    )
+    recurse_callbacks(callbacks=callbacks)
 
     editor = UserFactory()
     ai.algorithm.add_editor(editor)
@@ -862,8 +853,8 @@ def test_create_job_with_json_file(
         upload = create_upload_from_file(
             creator=editor, file_path=Path(file.name)
         )
-        with django_capture_on_commit_callbacks(execute=True):
-            with django_capture_on_commit_callbacks(execute=True):
+        with capture_on_commit_callbacks(execute=True):
+            with capture_on_commit_callbacks(execute=True):
                 response = get_view_for_user(
                     viewname="algorithms:job-create",
                     client=client,
@@ -884,17 +875,14 @@ def test_create_job_with_json_file(
 
 @pytest.mark.django_db
 def test_algorithm_job_create_with_image_input(
-    settings, client, algorithm_io_image, django_capture_on_commit_callbacks
+    settings, client, algorithm_io_image
 ):
     settings.task_eager_propagates = (True,)
     settings.task_always_eager = (True,)
 
-    with django_capture_on_commit_callbacks() as callbacks:
+    with capture_on_commit_callbacks() as callbacks:
         ai = AlgorithmImageFactory(image__from_path=algorithm_io_image)
-    recurse_callbacks(
-        callbacks=callbacks,
-        django_capture_on_commit_callbacks=django_capture_on_commit_callbacks,
-    )
+    recurse_callbacks(callbacks=callbacks)
 
     editor = UserFactory()
     ai.algorithm.add_editor(editor)
@@ -908,8 +896,8 @@ def test_algorithm_job_create_with_image_input(
     assign_perm("cases.view_image", editor, image2)
 
     civ = ComponentInterfaceValueFactory(interface=ci, image=image1)
-    with django_capture_on_commit_callbacks(execute=True):
-        with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
+        with capture_on_commit_callbacks(execute=True):
             response = get_view_for_user(
                 viewname="algorithms:job-create",
                 client=client,
@@ -929,8 +917,8 @@ def test_algorithm_job_create_with_image_input(
     # same civ reused
     assert Job.objects.get().inputs.first() == civ
 
-    with django_capture_on_commit_callbacks(execute=True):
-        with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
+        with capture_on_commit_callbacks(execute=True):
             response = get_view_for_user(
                 viewname="algorithms:job-create",
                 client=client,
@@ -953,8 +941,8 @@ def test_algorithm_job_create_with_image_input(
         file_path=RESOURCE_PATH / "image10x10x10.mha",
         creator=editor,
     )
-    with django_capture_on_commit_callbacks(execute=True):
-        with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
+        with capture_on_commit_callbacks(execute=True):
             response = get_view_for_user(
                 viewname="algorithms:job-create",
                 client=client,

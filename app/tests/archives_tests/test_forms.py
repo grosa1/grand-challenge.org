@@ -1,6 +1,7 @@
 import pytest
 from actstream.actions import is_following
 from django.contrib.auth.models import Permission
+from django_capture_on_commit_callbacks import capture_on_commit_callbacks
 
 from grandchallenge.algorithms.models import Job
 from grandchallenge.archives.models import Archive, ArchivePermissionRequest
@@ -202,9 +203,7 @@ def test_social_image_meta_tag(client, uploaded_image):
 
 
 @pytest.mark.django_db
-def test_archive_item_form(
-    client, settings, django_capture_on_commit_callbacks
-):
+def test_archive_item_form(client, settings):
     # Override the celery settings
     settings.task_eager_propagates = (True,)
     settings.task_always_eager = (True,)
@@ -280,15 +279,15 @@ def test_archive_item_form(
         algorithm=alg, is_manifest_valid=True, is_in_registry=True
     )
     alg.inputs.set([ci])
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         archive.algorithms.add(alg)
 
     assert Job.objects.count() == 1
 
     civ_count = ComponentInterfaceValue.objects.count()
 
-    with django_capture_on_commit_callbacks(execute=True):
-        with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
+        with capture_on_commit_callbacks(execute=True):
             response = get_view_for_user(
                 viewname="archives:item-edit",
                 client=client,
@@ -311,8 +310,8 @@ def test_archive_item_form(
     # has changed
     assert Job.objects.count() == 2
 
-    with django_capture_on_commit_callbacks(execute=True):
-        with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
+        with capture_on_commit_callbacks(execute=True):
             response = get_view_for_user(
                 viewname="archives:item-edit",
                 client=client,

@@ -1,6 +1,7 @@
 import pytest
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django_capture_on_commit_callbacks import capture_on_commit_callbacks
 
 from grandchallenge.components.models import InterfaceKind
 from grandchallenge.reader_studies.models import Question
@@ -19,7 +20,7 @@ from tests.reader_studies_tests.factories import (
 
 
 @pytest.mark.django_db
-def test_assign_score(settings, django_capture_on_commit_callbacks):
+def test_assign_score(settings):
     settings.task_eager_propagates = (True,)
     settings.task_always_eager = (True,)
 
@@ -35,13 +36,13 @@ def test_assign_score(settings, django_capture_on_commit_callbacks):
     rs.add_reader(r1)
     rs.add_reader(r2)
 
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         a1 = AnswerFactory(
             question=q1, creator=r1, answer="foo", display_set=ds
         )
     assert a1.score is None
 
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         AnswerFactory(
             question=q1,
             creator=e,
@@ -52,19 +53,19 @@ def test_assign_score(settings, django_capture_on_commit_callbacks):
     a1.refresh_from_db()
     assert a1.score == 1.0
 
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         a2 = AnswerFactory(
             question=q1, creator=r2, answer="foo", display_set=ds
         )
     a2.refresh_from_db()
     assert a2.score == 1.0
 
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         a1 = AnswerFactory(question=q2, creator=r1, answer=[], display_set=ds)
     a1.refresh_from_db()
     assert a1.score is None
 
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         AnswerFactory(
             question=q2,
             creator=e,
@@ -75,7 +76,7 @@ def test_assign_score(settings, django_capture_on_commit_callbacks):
     a1.refresh_from_db()
     assert a1.score == 1.0
 
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         a2 = AnswerFactory(question=q2, creator=r2, answer=[], display_set=ds)
     a2.refresh_from_db()
     assert a2.score == 1.0
@@ -115,9 +116,7 @@ def test_assert_modification_allowed():
 
 @pytest.mark.django_db
 @pytest.mark.parametrize("reverse", [True, False])
-def test_display_set_permissions_signal(
-    client, reverse, django_capture_on_commit_callbacks
-):
+def test_display_set_permissions_signal(client, reverse):
     ds1, ds2 = DisplaySetFactory.create_batch(2)
     im1, im2, im3, im4 = ImageFactory.create_batch(4)
 
@@ -128,7 +127,7 @@ def test_display_set_permissions_signal(
         ComponentInterfaceValueFactory(image=im4),
     )
 
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         if reverse:
             for civ in [civ1, civ2, civ3, civ4]:
                 civ.display_sets.add(ds1, ds2)
@@ -154,7 +153,7 @@ def test_display_set_permissions_signal(
     assert get_groups_with_set_perms(im4) == {}
 
     # Test clearing
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         if reverse:
             civ1.display_sets.clear()
             civ2.display_sets.clear()
@@ -166,14 +165,12 @@ def test_display_set_permissions_signal(
 
 
 @pytest.mark.django_db
-def test_deleting_display_set_removes_permissions(
-    django_capture_on_commit_callbacks,
-):
+def test_deleting_display_set_removes_permissions():
     ds1, ds2 = DisplaySetFactory.create_batch(2)
     im = ImageFactory()
     civ = ComponentInterfaceValueFactory(image=im)
 
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         ds1.values.set([civ])
         ds2.values.set([civ])
 
@@ -184,7 +181,7 @@ def test_deleting_display_set_removes_permissions(
         ds2.reader_study.readers_group: {"view_image"},
     }
 
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         ds1.delete()
 
     assert get_groups_with_set_perms(im) == {
@@ -194,14 +191,12 @@ def test_deleting_display_set_removes_permissions(
 
 
 @pytest.mark.django_db
-def test_changing_reader_study_updates_permissions(
-    django_capture_on_commit_callbacks,
-):
+def test_changing_reader_study_updates_permissions():
     ds = DisplaySetFactory()
     im = ImageFactory()
     civ = ComponentInterfaceValueFactory(image=im)
 
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         ds.values.set([civ])
 
     assert get_groups_with_set_perms(im) == {
@@ -213,7 +208,7 @@ def test_changing_reader_study_updates_permissions(
 
     ds.reader_study = rs
 
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         ds.save()
 
     assert get_groups_with_set_perms(im) == {

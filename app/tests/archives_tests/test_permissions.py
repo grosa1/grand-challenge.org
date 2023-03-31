@@ -1,6 +1,7 @@
 import pytest
 from django.conf import settings
 from django.contrib.auth.models import Group
+from django_capture_on_commit_callbacks import capture_on_commit_callbacks
 from guardian.shortcuts import get_perms, get_users_with_perms
 
 from grandchallenge.archives.models import Archive
@@ -73,7 +74,7 @@ class TestArchivePermissions:
 )
 @pytest.mark.django_db
 def test_api_archive_item_update_permissions(
-    client, settings, add_to_group, status, django_capture_on_commit_callbacks
+    client, settings, add_to_group, status
 ):
     # Override the celery settings
     settings.task_eager_propagates = (True,)
@@ -90,7 +91,7 @@ def test_api_archive_item_update_permissions(
         kind=InterfaceKind.InterfaceKindChoices.BOOL
     )
 
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         response = get_view_for_user(
             viewname="api:archives-item-detail",
             reverse_kwargs={"pk": item.pk},

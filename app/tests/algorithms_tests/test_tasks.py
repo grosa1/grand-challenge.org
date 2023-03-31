@@ -7,6 +7,8 @@ import pytest
 from actstream.models import Follow
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import File
+from django.test import TestCase
+from django_capture_on_commit_callbacks import capture_on_commit_callbacks
 from requests import put
 
 from grandchallenge.algorithms.models import DEFAULT_INPUT_INTERFACE_SLUG, Job
@@ -117,33 +119,31 @@ class TestCreateAlgorithmJobs:
             assert jobs[0].viewer_groups.filter(pk=g.pk).exists()
 
 
-def test_no_jobs_workflow(django_capture_on_commit_callbacks):
-    ai = AlgorithmImageFactory()
-    with django_capture_on_commit_callbacks() as callbacks:
-        create_algorithm_jobs(algorithm_image=ai, civ_sets=[])
-    assert len(callbacks) == 0
+class TestCreateJobsWorkflow(TestCase):
+    def test_no_jobs_workflow(self):
+        ai = AlgorithmImageFactory()
+        with capture_on_commit_callbacks() as callbacks:
+            create_algorithm_jobs(algorithm_image=ai, civ_sets=[])
+        assert len(callbacks) == 0
 
-
-def test_jobs_workflow(django_capture_on_commit_callbacks):
-    ai = AlgorithmImageFactory()
-    images = [ImageFactory(), ImageFactory()]
-    civ_sets = [
-        {
-            ComponentInterfaceValueFactory(
-                image=im, interface=ai.algorithm.inputs.get()
-            )
-        }
-        for im in images
-    ]
-    with django_capture_on_commit_callbacks() as callbacks:
-        create_algorithm_jobs(algorithm_image=ai, civ_sets=civ_sets)
-    assert len(callbacks) == 2
+    def test_jobs_workflow(self):
+        ai = AlgorithmImageFactory()
+        images = [ImageFactory(), ImageFactory()]
+        civ_sets = [
+            {
+                ComponentInterfaceValueFactory(
+                    image=im, interface=ai.algorithm.inputs.get()
+                )
+            }
+            for im in images
+        ]
+        with capture_on_commit_callbacks() as callbacks:
+            create_algorithm_jobs(algorithm_image=ai, civ_sets=civ_sets)
+        assert len(callbacks) == 2
 
 
 @pytest.mark.django_db
-def test_algorithm(
-    client, algorithm_image, settings, django_capture_on_commit_callbacks
-):
+def test_algorithm(client, algorithm_image, settings):
     # Override the celery settings
     settings.task_eager_propagates = (True,)
     settings.task_always_eager = (True,)
@@ -151,12 +151,9 @@ def test_algorithm(
     assert Job.objects.count() == 0
 
     # Create the algorithm image
-    with django_capture_on_commit_callbacks() as callbacks:
+    with capture_on_commit_callbacks() as callbacks:
         alg = AlgorithmImageFactory(image__from_path=algorithm_image)
-    recurse_callbacks(
-        callbacks=callbacks,
-        django_capture_on_commit_callbacks=django_capture_on_commit_callbacks,
-    )
+    recurse_callbacks(callbacks=callbacks)
     alg.refresh_from_db()
 
     # We should not be able to download image
@@ -172,12 +169,9 @@ def test_algorithm(
     )
     assert civ.interface.slug == "generic-medical-image"
 
-    with django_capture_on_commit_callbacks() as callbacks:
+    with capture_on_commit_callbacks() as callbacks:
         create_algorithm_jobs(algorithm_image=alg, civ_sets=[{civ}])
-    recurse_callbacks(
-        callbacks=callbacks,
-        django_capture_on_commit_callbacks=django_capture_on_commit_callbacks,
-    )
+    recurse_callbacks(callbacks=callbacks)
 
     jobs = Job.objects.filter(algorithm_image=alg).all()
 
@@ -224,12 +218,9 @@ def test_algorithm(
         image=image_file.image, interface=alg.algorithm.inputs.get(), file=None
     )
 
-    with django_capture_on_commit_callbacks() as callbacks:
+    with capture_on_commit_callbacks() as callbacks:
         create_algorithm_jobs(algorithm_image=alg, civ_sets=[{civ}])
-    recurse_callbacks(
-        callbacks=callbacks,
-        django_capture_on_commit_callbacks=django_capture_on_commit_callbacks,
-    )
+    recurse_callbacks(callbacks=callbacks)
 
     jobs = Job.objects.filter(
         algorithm_image=alg, inputs__image=image_file.image
@@ -246,9 +237,7 @@ def test_algorithm(
 
 
 @pytest.mark.django_db
-def test_algorithm_with_invalid_output(
-    client, algorithm_image, settings, django_capture_on_commit_callbacks
-):
+def test_algorithm_with_invalid_output(client, algorithm_image, settings):
     # Override the celery settings
     settings.task_eager_propagates = (True,)
     settings.task_always_eager = (True,)
@@ -256,12 +245,9 @@ def test_algorithm_with_invalid_output(
     assert Job.objects.count() == 0
 
     # Create the algorithm image
-    with django_capture_on_commit_callbacks() as callbacks:
+    with capture_on_commit_callbacks() as callbacks:
         alg = AlgorithmImageFactory(image__from_path=algorithm_image)
-    recurse_callbacks(
-        callbacks=callbacks,
-        django_capture_on_commit_callbacks=django_capture_on_commit_callbacks,
-    )
+    recurse_callbacks(callbacks=callbacks)
     alg.refresh_from_db()
 
     # Make sure the job fails when trying to upload an invalid file
@@ -280,12 +266,9 @@ def test_algorithm_with_invalid_output(
         image=image_file.image, interface=alg.algorithm.inputs.get(), file=None
     )
 
-    with django_capture_on_commit_callbacks() as callbacks:
+    with capture_on_commit_callbacks() as callbacks:
         create_algorithm_jobs(algorithm_image=alg, civ_sets=[{civ}])
-    recurse_callbacks(
-        callbacks=callbacks,
-        django_capture_on_commit_callbacks=django_capture_on_commit_callbacks,
-    )
+    recurse_callbacks(callbacks=callbacks)
 
     jobs = Job.objects.filter(
         algorithm_image=alg, inputs__image=image_file.image, status=Job.FAILURE
@@ -300,11 +283,7 @@ def test_algorithm_with_invalid_output(
 
 @pytest.mark.django_db
 def test_algorithm_multiple_inputs(
-    client,
-    algorithm_io_image,
-    settings,
-    component_interfaces,
-    django_capture_on_commit_callbacks,
+    client, algorithm_io_image, settings, component_interfaces
 ):
     # Override the celery settings
     settings.task_eager_propagates = (True,)
@@ -315,12 +294,9 @@ def test_algorithm_multiple_inputs(
     assert Job.objects.count() == 0
 
     # Create the algorithm image
-    with django_capture_on_commit_callbacks() as callbacks:
+    with capture_on_commit_callbacks() as callbacks:
         alg = AlgorithmImageFactory(image__from_path=algorithm_io_image)
-    recurse_callbacks(
-        callbacks=callbacks,
-        django_capture_on_commit_callbacks=django_capture_on_commit_callbacks,
-    )
+    recurse_callbacks(callbacks=callbacks)
 
     alg.algorithm.add_editor(creator)
 
@@ -362,14 +338,11 @@ def test_algorithm_multiple_inputs(
         creator=creator, algorithm_image=alg, input_civ_set=input_civ_set
     )
 
-    with django_capture_on_commit_callbacks() as callbacks:
+    with capture_on_commit_callbacks() as callbacks:
         run_algorithm_job_for_inputs(
             job_pk=job.pk, upload_session_pks=[], user_upload_pks=[]
         )
-    recurse_callbacks(
-        callbacks=callbacks,
-        django_capture_on_commit_callbacks=django_capture_on_commit_callbacks,
-    )
+    recurse_callbacks(callbacks=callbacks)
 
     job.refresh_from_db()
     assert job.error_message == ""
@@ -389,7 +362,7 @@ def test_algorithm_multiple_inputs(
 
 @pytest.mark.django_db
 def test_algorithm_input_image_multiple_files(
-    client, settings, component_interfaces, django_capture_on_commit_callbacks
+    client, settings, component_interfaces
 ):
     # Override the celery settings
     settings.task_eager_propagates = (True,)
@@ -415,7 +388,7 @@ def test_algorithm_input_image_multiple_files(
         creator=creator, algorithm_image=alg, input_civ_set=[civ]
     )
 
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         run_algorithm_job_for_inputs(
             job_pk=job.pk,
             upload_session_pks={civ.pk: us.pk},
@@ -430,9 +403,7 @@ def test_algorithm_input_image_multiple_files(
 
 
 @pytest.mark.django_db
-def test_algorithm_input_user_upload(
-    client, settings, component_interfaces, django_capture_on_commit_callbacks
-):
+def test_algorithm_input_user_upload(client, settings, component_interfaces):
     # Override the celery settings
     settings.task_eager_propagates = (True,)
     settings.task_always_eager = (True,)
@@ -469,7 +440,7 @@ def test_algorithm_input_user_upload(
         creator=creator, algorithm_image=alg, input_civ_set=[civ]
     )
 
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         run_algorithm_job_for_inputs(
             job_pk=job.pk,
             upload_session_pks=[],
@@ -490,7 +461,7 @@ def test_algorithm_input_user_upload(
     upload2.save()
     civ2 = ComponentInterfaceValueFactory(interface=ci)
 
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         run_algorithm_job_for_inputs(
             job_pk=job.pk,
             upload_session_pks=[],
@@ -640,9 +611,7 @@ class TestJobCreation:
 
 
 @pytest.mark.django_db
-def test_failed_job_notifications(
-    client, settings, django_capture_on_commit_callbacks
-):
+def test_failed_job_notifications(client, settings):
     # Override the celery settings
     settings.task_eager_propagates = (True,)
     settings.task_always_eager = (True,)
@@ -662,7 +631,7 @@ def test_failed_job_notifications(
     job.status = Job.FAILURE
     job.save()
 
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         send_failed_job_notification(job_pk=job.pk)
 
     # 1 notification for the job creator
@@ -698,7 +667,7 @@ def test_failed_job_notifications(
     job.status = Job.FAILURE
     job.save()
 
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         send_failed_job_notification(job_pk=job.pk)
 
     with pytest.raises(ObjectDoesNotExist):
@@ -706,21 +675,16 @@ def test_failed_job_notifications(
 
 
 @pytest.mark.django_db
-def test_setting_credits_per_job(
-    algorithm_image, settings, django_capture_on_commit_callbacks
-):
+def test_setting_credits_per_job(algorithm_image, settings):
     # Override the celery settings
     settings.task_eager_propagates = (True,)
     settings.task_always_eager = (True,)
 
     # Create the algorithm image
-    with django_capture_on_commit_callbacks() as callbacks:
+    with capture_on_commit_callbacks() as callbacks:
         ai = AlgorithmImageFactory(image__from_path=algorithm_image)
 
-    recurse_callbacks(
-        callbacks=callbacks,
-        django_capture_on_commit_callbacks=django_capture_on_commit_callbacks,
-    )
+    recurse_callbacks(callbacks=callbacks)
     ai.refresh_from_db()
     alg = ai.algorithm
 

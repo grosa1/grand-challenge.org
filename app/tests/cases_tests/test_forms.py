@@ -1,5 +1,6 @@
 import pytest
 from django.test import Client
+from django_capture_on_commit_callbacks import capture_on_commit_callbacks
 
 from grandchallenge.cases.models import RawImageUploadSession
 from grandchallenge.components.models import ComponentInterface
@@ -12,11 +13,7 @@ from tests.utils import get_view_for_user
 
 @pytest.mark.django_db
 def test_upload_some_images(
-    client: Client,
-    challenge_set,
-    settings,
-    authenticated_staff_user,
-    django_capture_on_commit_callbacks,
+    client: Client, challenge_set, settings, authenticated_staff_user
 ):
     # Override the celery settings
     settings.task_eager_propagates = (True,)
@@ -43,7 +40,7 @@ def test_upload_some_images(
         file_path=RESOURCE_PATH / "image10x10x10.mha", creator=user
     )
 
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         response = get_view_for_user(
             data={
                 "user_uploads": [user_upload.pk],

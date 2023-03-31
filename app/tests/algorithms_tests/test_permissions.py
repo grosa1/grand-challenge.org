@@ -1,6 +1,7 @@
 import pytest
 from django.conf import settings
 from django.contrib.auth.models import Group
+from django_capture_on_commit_callbacks import capture_on_commit_callbacks
 from guardian.shortcuts import (
     assign_perm,
     get_group_perms,
@@ -360,9 +361,7 @@ class TestJobPermissions:
             algorithm_image=algorithm_image, job=job, user=user
         )
 
-    def test_job_permissions_for_archive(
-        self, django_capture_on_commit_callbacks
-    ):
+    def test_job_permissions_for_archive(self):
         ai = AlgorithmImageFactory(is_manifest_valid=True, is_in_registry=True)
         archive = ArchiveFactory()
 
@@ -376,7 +375,7 @@ class TestJobPermissions:
             image=im, interface=ai.algorithm.inputs.get()
         )
         archive_item = ArchiveItemFactory(archive=archive)
-        with django_capture_on_commit_callbacks(execute=True):
+        with capture_on_commit_callbacks(execute=True):
             archive_item.values.add(civ)
 
         archive.algorithms.set([ai.algorithm])
@@ -405,9 +404,7 @@ class TestJobPermissions:
         # No-one should be in the viewers group
         assert {*job.viewers.user_set.all()} == set()
 
-    def test_job_permissions_for_challenge(
-        self, django_capture_on_commit_callbacks
-    ):
+    def test_job_permissions_for_challenge(self):
         ai = AlgorithmImageFactory()
         archive = ArchiveFactory()
         evaluation = EvaluationFactory(
@@ -424,7 +421,7 @@ class TestJobPermissions:
             image=im, interface=ai.algorithm.inputs.get()
         )
         archive_item = ArchiveItemFactory(archive=archive)
-        with django_capture_on_commit_callbacks(execute=True):
+        with capture_on_commit_callbacks(execute=True):
             archive_item.values.add(civ)
 
         create_algorithm_jobs_for_evaluation(evaluation_pk=evaluation.pk)

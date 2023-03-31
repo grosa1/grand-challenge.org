@@ -2,6 +2,7 @@ import json
 
 import pytest
 from celery.exceptions import MaxRetriesExceededError
+from django_capture_on_commit_callbacks import capture_on_commit_callbacks
 
 from grandchallenge.components.tasks import (
     _retry,
@@ -20,8 +21,8 @@ from tests.factories import WorkstationImageFactory
 
 
 @pytest.mark.django_db
-def test_retry_initial_options(django_capture_on_commit_callbacks):
-    with django_capture_on_commit_callbacks() as callbacks:
+def test_retry_initial_options():
+    with capture_on_commit_callbacks() as callbacks:
         _retry(
             task=execute_job,
             signature_kwargs={
@@ -37,8 +38,8 @@ def test_retry_initial_options(django_capture_on_commit_callbacks):
 
 
 @pytest.mark.django_db
-def test_retry_initial(django_capture_on_commit_callbacks):
-    with django_capture_on_commit_callbacks() as callbacks:
+def test_retry_initial():
+    with capture_on_commit_callbacks() as callbacks:
         _retry(
             task=execute_job,
             signature_kwargs={"kwargs": {"foo": "bar"}},
@@ -51,8 +52,8 @@ def test_retry_initial(django_capture_on_commit_callbacks):
 
 
 @pytest.mark.django_db
-def test_retry_many(django_capture_on_commit_callbacks):
-    with django_capture_on_commit_callbacks() as callbacks:
+def test_retry_many():
+    with capture_on_commit_callbacks() as callbacks:
         _retry(
             task=execute_job,
             signature_kwargs={"kwargs": {"foo": "bar"}},
@@ -108,7 +109,7 @@ def test_encode_b64j(val, expected):
 
 
 @pytest.mark.django_db
-def test_remove_inactive_container_images(django_capture_on_commit_callbacks):
+def test_remove_inactive_container_images():
     MethodFactory(is_in_registry=True, is_manifest_valid=True)
     WorkstationImageFactory(is_in_registry=True, is_manifest_valid=True)
     alg = AlgorithmFactory()
@@ -119,7 +120,7 @@ def test_remove_inactive_container_images(django_capture_on_commit_callbacks):
         is_in_registry=True, is_manifest_valid=True, algorithm=alg
     )
 
-    with django_capture_on_commit_callbacks() as callbacks:
+    with capture_on_commit_callbacks() as callbacks:
         remove_inactive_container_images()
 
     assert len(callbacks) == 1

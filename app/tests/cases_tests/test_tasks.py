@@ -4,6 +4,7 @@ from uuid import uuid4
 
 import pytest
 from celery import shared_task
+from django_capture_on_commit_callbacks import capture_on_commit_callbacks
 from panimg.models import ImageType, PanImgFile, PostProcessorResult
 from panimg.post_processors import DEFAULT_POST_PROCESSORS
 
@@ -20,9 +21,7 @@ from tests.factories import UploadSessionFactory
 
 
 @pytest.mark.django_db
-def test_linked_task_called_with_session_pk(
-    settings, django_capture_on_commit_callbacks
-):
+def test_linked_task_called_with_session_pk(settings):
     # Override the celery settings
     settings.task_eager_propagates = (True,)
     settings.task_always_eager = (True,)
@@ -35,7 +34,7 @@ def test_linked_task_called_with_session_pk(
 
     session = UploadSessionFactory()
 
-    with django_capture_on_commit_callbacks(execute=True):
+    with capture_on_commit_callbacks(execute=True):
         session.process_images(linked_task=local_linked_task.signature())
 
     assert called == {"upload_session_pk": session.pk}
@@ -107,13 +106,7 @@ def test_check_post_processor_result():
     "source_dir, filename",
     [(RESOURCE_PATH, "valid_tiff.tif"), (RESOURCE_PATH, "no_dzi.tif")],
 )
-def test_post_processing(
-    source_dir,
-    filename,
-    tmpdir_factory,
-    settings,
-    django_capture_on_commit_callbacks,
-):
+def test_post_processing(source_dir, filename, tmpdir_factory, settings):
     settings.task_eager_propagates = (True,)
     settings.task_always_eager = (True,)
 
@@ -121,7 +114,7 @@ def test_post_processing(
     temp_file = Path(input_directory / filename)
     shutil.copy(source_dir / filename, temp_file)
 
-    with django_capture_on_commit_callbacks() as callbacks:
+    with capture_on_commit_callbacks() as callbacks:
         imported_images = import_images(input_directory=input_directory)
 
     assert len(callbacks) == 1
